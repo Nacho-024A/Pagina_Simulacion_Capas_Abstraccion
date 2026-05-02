@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capas de Abstracción</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+
+    /* ── Hero ─────────────────────────────────────────────── */
+    .hero {
+      min-height: calc(100vh - var(--navbar-h));
+      display: flex;
+      align-items: center;
+      padding: 4rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -120px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(124,133,255,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      max-width: 680px;
+      margin: 0 auto;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: var(--accent-glow);
+      border: 1px solid var(--accent-dim);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .hero h1 {
+      margin-bottom: 1.25rem;
+      animation: fadeUp 0.4s ease 0.08s both;
+    }
+
+    .hero h1 em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .hero-desc {
+      font-size: 16px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 2rem;
+      animation: fadeUp 0.4s ease 0.14s both;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeUp 0.4s ease 0.2s both;
+    }
+
+    /* ── Stats ────────────────────────────────────────────── */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+      padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+      animation: fadeUp 0.4s ease 0.26s both;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: var(--font-mono);
+      font-size: 1.8rem;
+      font-weight: 500;
+      color: var(--accent);
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── Sección ¿Qué aprenderás? ─────────────────────────── */
+    .section {
+      padding: 4rem 1.5rem;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: border-color var(--transition), transform var(--transition), background var(--transition);
+    }
+
+    .feature-card:hover {
+      border-color: var(--accent-dim);
+      background: var(--bg-card-hover);
+      transform: translateY(-3px);
+    }
+
+    .feature-icon {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .feature-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .feature-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.65;
+      flex: 1;
+    }
+
+    .feature-link {
+      font-size: 13px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: auto;
+    }
+
+    /* ── Cómo funciona ────────────────────────────────────── */
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+      counter-reset: steps;
+    }
+
+    .how-item {
+      position: relative;
+      padding-left: 1rem;
+      counter-increment: steps;
+    }
+
+    .how-item::before {
+      content: counter(steps, decimal-leading-zero);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .how-item h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+    }
+
+    .how-item p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ── Banner CTA ───────────────────────────────────────── */
+    .cta-banner {
+      margin: 0 1.5rem 4rem;
+      background: linear-gradient(135deg, rgba(124,133,255,0.08), rgba(56,189,248,0.05));
+      border: 1px solid var(--accent-dim);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+
+    .cta-banner h2 {
+      font-size: 1.4rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .cta-banner p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+  </style>
+</head>
+<body>
+
+<script src="js/nav.js"></script>
+
+<div class="page-wrapper">
+
+  <!-- ── Hero ──────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">✦ Educación tecnológica interactiva</div>
+      <h1>Entiende cómo funciona<br>un computador <em>por dentro</em></h1>
+      <p class="hero-desc">
+        Desde un transistor del tamaño de un átomo hasta el mensaje de WhatsApp
+        que le enviaste a alguien hace cinco minutos. Todo tiene una explicación,
+        y aquí la encontrarás de forma visual y sencilla.
+      </p>
+      <div class="hero-actions">
+        <a href="capas.html" class="btn btn-primary">Comenzar simulación →</a>
+        <a href="#contenido" class="btn btn-secondary">Ver contenido</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Stats ─────────────────────────────────────────────── -->
+  <div class="stats">
+    <div class="stat-item">
+      <span class="stat-num">5</span>
+      <span class="stat-label">Capas de abstracción</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">3</span>
+      <span class="stat-label">Simulaciones interactivas</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">0</span>
+      <span class="stat-label">Conocimiento previo requerido</span>
+    </div>
+  </div>
+
+  <!-- ── Contenido ─────────────────────────────────────────── -->
+  <section class="section" id="contenido">
+    <div class="container">
+      <div class="section-label">¿Qué encontrarás aquí?</div>
+      <h2 class="section-title">Tres módulos para entender la tecnología</h2>
+      <p class="section-sub">Cada módulo es independiente e interactivo. Puedes empezar por el que más te llame la atención.</p>
+
+      <div class="cards-grid">
+
+        <a href="capas.html" class="feature-card anim-fade-up anim-delay-1">
+          <div class="feature-icon">🔬</div>
+          <div class="feature-title">Simulación de Capas</div>
+          <p class="feature-desc">
+            Recorre las 5 capas de abstracción de un computador: desde los transistores físicos hasta la app que usas a diario.
+          </p>
+          <span class="feature-link">Explorar capas →</span>
+        </a>
+
+        <a href="whatsapp.html" class="feature-card anim-fade-up anim-delay-2">
+          <div class="feature-icon">📱</div>
+          <div class="feature-title">Simulador de Flujo</div>
+          <p class="feature-desc">
+            Envía un mensaje de WhatsApp y observa cada paso: del código Java/Kotlin al binario, la red, y el dispositivo receptor.
+          </p>
+          <span class="feature-link">Ver el flujo →</span>
+        </a>
+
+        <a href="binario.html" class="feature-card anim-fade-up anim-delay-3">
+          <div class="feature-icon">🔢</div>
+          <div class="feature-title">Convertidor Binario</div>
+          <p class="feature-desc">
+            Convierte números entre binario y decimal viendo el proceso paso a paso, como si lo hicieras en papel.
+          </p>
+          <span class="feature-link">Convertir números →</span>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Cómo funciona ──────────────────────────────────────── -->
+  <section class="section" style="padding-top: 0;">
+    <div class="container">
+      <div class="section-label">¿Cómo está organizado?</div>
+      <h2 class="section-title">De lo más simple a lo más complejo</h2>
+
+      <div class="how-grid">
+        <div class="how-item">
+          <h4>Transistores</h4>
+          <p>El interruptor más pequeño del mundo. Solo enciende o apaga.</p>
+        </div>
+        <div class="how-item">
+          <h4>Bits y Bytes</h4>
+          <p>8 interruptores forman un byte. Todo lo digital son ceros y unos.</p>
+        </div>
+        <div class="how-item">
+          <h4>Sistema Operativo</h4>
+          <p>El árbitro que reparte los recursos entre todas las apps.</p>
+        </div>
+        <div class="how-item">
+          <h4>Lenguaje de Programación</h4>
+          <p>Instrucciones escritas para humanos que la máquina traduce.</p>
+        </div>
+        <div class="how-item">
+          <h4>Aplicación</h4>
+          <p>Lo que ves y tocas. Un botón activa miles de instrucciones abajo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ───────────────────────────────────────────────── -->
+  <div class="cta-banner">
+    <h2>¿Listo para el primer módulo?</h2>
+    <p>Empieza con la simulación de capas y descubre qué hay detrás de cada app que usas.</p>
+    <a href="capas.html" class="btn btn-primary">Ir a Simulación de Capas →</a>
+  </div>
+
+  <!-- ── Footer ────────────────────────────────────────────── -->
+  <footer class="footer">
+    <p>Hecho para enseñar cómo funciona la tecnología que usamos todos los días.</p>
+  </footer>
+
+</div>
+
+</body>
+</html>

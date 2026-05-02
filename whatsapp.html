@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Flujo — Capas de Abstracción</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+
+    .sim-wrapper {
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .sim-header {
+      max-width: 620px;
+      margin: 0 auto 2rem;
+      text-align: center;
+    }
+
+    /* ── Input de mensaje ─────────────────────────────────── */
+    .msg-composer {
+      max-width: 620px;
+      margin: 0 auto 2rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .msg-composer input {
+      flex: 1;
+    }
+
+    /* ── Flujo ────────────────────────────────────────────── */
+    .flow-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* Lado: emisor / receptor */
+    .flow-side-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+
+    .flow-side-label.sender   { background: rgba(124,133,255,0.1); color: var(--accent); }
+    .flow-side-label.network  { background: rgba(56,189,248,0.1);  color: var(--cyan);   }
+    .flow-side-label.receiver { background: rgba(93,202,165,0.1);  color: var(--layer-app); }
+
+    /* Paso individual */
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 4px;
+      opacity: 0.35;
+      transform: translateX(-8px);
+      transition: opacity 0.35s ease, transform 0.35s ease, border-color 0.35s ease, background 0.35s ease;
+      position: relative;
+    }
+
+    .flow-step.active {
+      opacity: 1;
+      transform: translateX(0);
+      border-color: var(--accent-dim);
+      background: var(--bg-card-hover);
+    }
+
+    .flow-step.done {
+      opacity: 0.7;
+      transform: translateX(0);
+      border-color: var(--border);
+    }
+
+    .flow-step.receiver-step {
+      transform: translateX(8px);
+    }
+
+    .flow-step.receiver-step.active,
+    .flow-step.receiver-step.done {
+      transform: translateX(0);
+    }
+
+    /* Icono del paso */
+    .step-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .flow-step.active .step-icon {
+      background: var(--accent-glow);
+      border-color: var(--accent-dim);
+      animation: glow 1.5s ease infinite;
+    }
+
+    .flow-step.done .step-icon {
+      background: rgba(93,202,165,0.08);
+      border-color: rgba(93,202,165,0.3);
+    }
+
+    .step-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .step-layer {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 3px;
+    }
+
+    .step-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 3px;
+    }
+
+    .step-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    /* Dato dinámico que cambia según el mensaje */
+    .step-data {
+      margin-top: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent);
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      display: none;
+      word-break: break-all;
+    }
+
+    .flow-step.active .step-data,
+    .flow-step.done   .step-data {
+      display: block;
+    }
+
+    /* Check de completado */
+    .step-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      flex-shrink: 0;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .flow-step.done .step-check {
+      background: rgba(93,202,165,0.2);
+      border-color: var(--layer-app);
+      color: var(--layer-app);
+    }
+
+    /* Conector entre pasos */
+    .flow-connector {
+      width: 2px;
+      height: 20px;
+      background: var(--border-subtle);
+      margin: 0 auto;
+      position: relative;
+      left: 32px;
+    }
+
+    .flow-connector.done {
+      background: var(--accent-dim);
+    }
+
+    /* Separador de sección (red) */
+    .flow-section-sep {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .flow-section-sep::before,
+    .flow-section-sep::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    /* Panel de resultado final */
+    .result-panel {
+      max-width: 720px;
+      margin: 1.5rem auto 0;
+      background: linear-gradient(135deg, rgba(93,202,165,0.06), rgba(124,133,255,0.04));
+      border: 1px solid rgba(93,202,165,0.25);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      display: none;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .result-panel.visible { display: block; }
+
+    .result-phones {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .phone-mock {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1rem;
+      width: 200px;
+      min-height: 120px;
+    }
+
+    .phone-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .phone-bubble {
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-size: 13px;
+      max-width: 90%;
+    }
+
+    .phone-bubble.sent {
+      background: #1e3a5f;
+      color: #b8d4f5;
+      border-radius: 12px 12px 3px 12px;
+      margin-left: auto;
+    }
+
+    .phone-bubble.received {
+      background: #1a2a1a;
+      color: #9ecfa0;
+      border-radius: 12px 12px 12px 3px;
+    }
+
+    .arrow-icon {
+      font-size: 28px;
+      color: var(--text-muted);
+    }
+
+    /* Controles */
+    .controls {
+      max-width: 720px;
+      margin: 1.5rem auto 0;
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+  </style>
+</head>
+<body>
+
+<script src="js/nav.js"></script>
+<script src="js/whatsapp.js" defer></script>
+
+<div class="page-wrapper">
+  <div class="sim-wrapper">
+
+    <div class="sim-header anim-fade-up">
+      <div class="section-label">Módulo 2</div>
+      <h1 style="font-size: clamp(1.5rem, 4vw, 2.2rem); margin-bottom: 0.5rem;">
+        Simulador de Flujo
+      </h1>
+      <p style="font-size:15px;">
+        Escribe un mensaje y observa cada paso que ocurre desde que presionas
+        "Enviar" hasta que llega al destinatario.
+      </p>
+    </div>
+
+    <!-- Compositor -->
+    <div class="msg-composer anim-fade-up anim-delay-1">
+      <input
+        id="wa-input"
+        class="input"
+        type="text"
+        placeholder="Escribe tu mensaje aquí…"
+        maxlength="60"
+      />
+      <button class="btn btn-primary" id="btn-send" onclick="waSend()">
+        Enviar ✉
+      </button>
+    </div>
+
+    <!-- Flujo -->
+    <div class="flow-wrap" id="flow-wrap">
+
+      <!-- EMISOR -->
+      <div class="flow-side-label sender">📱 Tu dispositivo (emisor)</div>
+
+      <div class="flow-step" id="step-0">
+        <div class="step-icon">📱</div>
+        <div class="step-content">
+          <div class="step-layer">Capa de Aplicación</div>
+          <div class="step-title">WhatsApp llama a <code>Enviar_mensaje()</code></div>
+          <div class="step-desc">Presionas "Enviar". La app toma tu texto y lo pasa a la función responsable de enviarlo.</div>
+          <div class="step-data" id="data-0"></div>
+        </div>
+        <div class="step-check" id="check-0"></div>
+      </div>
+
+      <div class="flow-connector" id="conn-0"></div>
+
+      <div class="flow-step" id="step-1">
+        <div class="step-icon">☕</div>
+        <div class="step-content">
+          <div class="step-layer">Lenguaje de Programación — Java / Kotlin</div>
+          <div class="step-title"><code>Enviar_mensaje(texto, destinatario)</code></div>
+          <div class="step-desc">El código de WhatsApp empaqueta el mensaje: le añade tu número, el del destinatario y la hora.</div>
+          <div class="step-data" id="data-1"></div>
+        </div>
+        <div class="step-check" id="check-1"></div>
+      </div>
+
+      <div class="flow-connector" id="conn-1"></div>
+
+      <div class="flow-step" id="step-2">
+        <div class="step-icon">🖥️</div>
+        <div class="step-content">
+          <div class="step-layer">Sistema Operativo — Android / iOS</div>
+          <div class="step-title">El SO delega al módulo de red</div>
+          <div class="step-desc">El SO recibe la orden y la pasa al controlador de red del dispositivo para que lo transmita.</div>
+          <div class="step-data" id="data-2"></div>
+        </div>
+        <div class="step-check" id="check-2"></div>
+      </div>
+
+      <div class="flow-connector" id="conn-2"></div>
+
+      <div class="flow-step" id="step-3">
+        <div class="step-icon">⚡</div>
+        <div class="step-content">
+          <div class="step-layer">Lenguaje Máquina — Binario</div>
+          <div class="step-title">El mensaje se convierte en 0s y 1s</div>
+          <div class="step-desc">Cada letra se transforma en su código binario. El hardware solo entiende este lenguaje.</div>
+          <div class="step-data" id="data-3"></div>
+        </div>
+        <div class="step-check" id="check-3"></div>
+      </div>
+
+      <div class="flow-connector" id="conn-3"></div>
+
+      <div class="flow-step" id="step-4">
+        <div class="step-icon">📡</div>
+        <div class="step-content">
+          <div class="step-layer">Hardware — Antena / WiFi</div>
+          <div class="step-title">Los transistores transmiten la señal</div>
+          <div class="step-desc">Miles de millones de transistores convierten los bits en señales eléctricas o de radio que viajan por la red.</div>
+          <div class="step-data" id="data-4"></div>
+        </div>
+        <div class="step-check" id="check-4"></div>
+      </div>
+
+      <!-- RED -->
+      <div class="flow-section-sep">
+        <div class="flow-side-label network">🌐 Internet</div>
+      </div>
+
+      <div class="flow-step" id="step-5">
+        <div class="step-icon">🌐</div>
+        <div class="step-content">
+          <div class="step-layer">Red — Servidores de WhatsApp</div>
+          <div class="step-title">La señal viaja por Internet</div>
+          <div class="step-desc">Los paquetes de datos saltan entre routers y servidores hasta llegar al servidor de WhatsApp.</div>
+          <div class="step-data" id="data-5"></div>
+        </div>
+        <div class="step-check" id="check-5"></div>
+      </div>
+
+      <!-- RECEPTOR -->
+      <div class="flow-section-sep">
+        <div class="flow-side-label receiver">📲 Dispositivo receptor</div>
+      </div>
+
+      <div class="flow-step receiver-step" id="step-6">
+        <div class="step-icon">📡</div>
+        <div class="step-content">
+          <div class="step-layer">Hardware — Antena / WiFi</div>
+          <div class="step-title">La señal llega al dispositivo</div>
+          <div class="step-desc">La antena del receptor capta la señal. Los transistores la convierten de nuevo en bits.</div>
+          <div class="step-data" id="data-6"></div>
+        </div>
+        <div class="step-check" id="check-6"></div>
+      </div>
+
+      <div class="flow-connector" id="conn-6"></div>
+
+      <div class="flow-step receiver-step" id="step-7">
+        <div class="step-icon">🖥️</div>
+        <div class="step-content">
+          <div class="step-layer">Sistema Operativo</div>
+          <div class="step-title">El SO entrega los datos a WhatsApp</div>
+          <div class="step-desc">El sistema operativo del receptor identifica que los datos son para WhatsApp y se los pasa.</div>
+          <div class="step-data" id="data-7"></div>
+        </div>
+        <div class="step-check" id="check-7"></div>
+      </div>
+
+      <div class="flow-connector" id="conn-7"></div>
+
+      <div class="flow-step receiver-step" id="step-8">
+        <div class="step-icon">☕</div>
+        <div class="step-content">
+          <div class="step-layer">Lenguaje de Programación — Java / Kotlin</div>
+          <div class="step-title"><code>Recibir_mensaje(datos)</code></div>
+          <div class="step-desc">WhatsApp en el receptor llama a su función de recepción, que desempaqueta los datos.</div>
+          <div class="step-data" id="data-8"></div>
+        </div>
+        <div class="step-check" id="check-8"></div>
+      </div>
+
+      <div class="flow-connector" id="conn-8"></div>
+
+      <div class="flow-step receiver-step" id="step-9">
+        <div class="step-icon">📲</div>
+        <div class="step-content">
+          <div class="step-layer">Capa de Aplicación</div>
+          <div class="step-title">¡El mensaje aparece en pantalla!</div>
+          <div class="step-desc">WhatsApp muestra la burbuja del mensaje, reproduce la notificación y marca el doble check.</div>
+          <div class="step-data" id="data-9"></div>
+        </div>
+        <div class="step-check" id="check-9"></div>
+      </div>
+
+    </div>
+
+    <!-- Resultado final -->
+    <div class="result-panel" id="result-panel">
+      <div class="section-label" style="text-align:center">✓ Entregado</div>
+      <h3 style="text-align:center; font-size:1.1rem; margin-top:4px;">
+        El mensaje completó su viaje en milisegundos
+      </h3>
+      <div class="result-phones">
+        <div class="phone-mock">
+          <div class="phone-label">📱 Tú (emisor)</div>
+          <div class="phone-bubble sent" id="result-sent"></div>
+        </div>
+        <div class="arrow-icon">→</div>
+        <div class="phone-mock">
+          <div class="phone-label">📲 Receptor</div>
+          <div class="phone-bubble received" id="result-received"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controles -->
+    <div class="controls">
+      <button class="btn btn-secondary" id="btn-reset" onclick="waReset()" style="display:none">
+        ↺ Nuevo mensaje
+      </button>
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <p>¿Quieres entender los números binarios? <a href="binario.html">Ir al Convertidor →</a></p>
+  </footer>
+</div>
+
+</body>
+</html>

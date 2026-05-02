@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulación de Capas — Capas de Abstracción</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+
+    /* ── Layout principal ─────────────────────────────────── */
+    .sim-wrapper {
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .sim-header {
+      max-width: 620px;
+      margin: 0 auto 2rem;
+      text-align: center;
+    }
+
+    /* ── Dots de progreso ─────────────────────────────────── */
+    .progress-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 2rem;
+    }
+
+    .prog-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      cursor: pointer;
+      transition: background var(--transition), width var(--transition);
+      border: none;
+      padding: 0;
+    }
+
+    .prog-dot.active {
+      background: var(--accent);
+      width: 24px;
+      border-radius: 4px;
+    }
+
+    .prog-dot:hover:not(.active) {
+      background: var(--accent-dim);
+    }
+
+    /* ── Tarjeta de escena ────────────────────────────────── */
+    .scene-card {
+      max-width: 720px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .scene-top {
+      padding: 1.5rem 1.75rem 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .scene-num {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+
+    .scene-title {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .scene-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .scene-body {
+      padding: 1.5rem 1.75rem;
+      min-height: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .scene-footer {
+      padding: 1rem 1.75rem;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .scene-counter {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .nav-btns {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    /* ── Componentes de escenas ───────────────────────────── */
+
+    /* Pirámide */
+    .pyramid-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .layer-pill {
+      border-radius: var(--radius-sm);
+      padding: 10px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.3s, box-shadow 0.2s;
+      width: 100%;
+    }
+
+    .layer-pill:hover { transform: scaleX(1.015); }
+    .layer-pill.inactive { opacity: 0.25; }
+
+    .pill-name { font-size: 14px; font-weight: 600; }
+    .pill-sub  { font-size: 12px; margin-top: 2px; opacity: 0.8; }
+
+    .pyramid-hint {
+      font-size: 12px;
+      color: var(--text-hint);
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    .detail-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      animation: fadeUp 0.25s ease both;
+    }
+
+    .detail-box-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .detail-box-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    /* Transistor */
+    .transistor-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .sw-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .sw-track {
+      position: relative;
+      width: 56px;
+      height: 30px;
+      border-radius: 15px;
+      background: #1e2a1e;
+      cursor: pointer;
+      border: 1px solid #2a3828;
+      transition: background 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .sw-track.on {
+      background: #1a5c35;
+      border-color: #27a05a;
+    }
+
+    .sw-knob {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #8a9a88;
+      transition: transform 0.2s, background 0.2s;
+      pointer-events: none;
+    }
+
+    .sw-track.on .sw-knob {
+      transform: translateX(26px);
+      background: #fff;
+    }
+
+    .sw-value {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-primary);
+      min-width: 110px;
+    }
+
+    .bulb {
+      font-size: 24px;
+      transition: opacity 0.25s, filter 0.25s;
+    }
+
+    .bulb.off { opacity: 0.15; filter: grayscale(1); }
+    .bulb.on  { opacity: 1;    filter: drop-shadow(0 0 6px #ffe066); }
+
+    .cycles-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cycles-track {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--bg-input);
+      overflow: hidden;
+    }
+
+    .cycles-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: #1a8a4a;
+      transition: width 0.04s linear;
+    }
+
+    .cycles-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* Bits */
+    .bit-grid {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .bit-cell {
+      width: 46px;
+      height: 46px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      background: var(--bg-input);
+      color: var(--text-muted);
+      user-select: none;
+    }
+
+    .bit-cell.on {
+      background: #1d3f7a;
+      border-color: #3b7dd8;
+      color: #c8e0ff;
+    }
+
+    .bit-info {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .bit-info strong {
+      color: var(--text-primary);
+    }
+
+    /* OS Bars */
+    .os-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .os-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .os-row:hover .os-label { color: var(--text-primary); }
+
+    .os-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      width: 140px;
+      flex-shrink: 0;
+      transition: color var(--transition);
+    }
+
+    .os-track {
+      flex: 1;
+      height: 8px;
+      border-radius: 4px;
+      background: var(--bg-input);
+      overflow: hidden;
+    }
+
+    .os-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.35s ease;
+    }
+
+    .os-pct {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      width: 34px;
+      text-align: right;
+    }
+
+    /* Lang cards */
+    .lang-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .lang-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+
+    .lang-code {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: #7ab3f5;
+      display: block;
+      margin-bottom: 5px;
+      white-space: pre;
+    }
+
+    .lang-meaning {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Mensaje */
+    .msg-input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .msg-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      overflow-y: auto;
+      max-height: 200px;
+    }
+
+    .msg-bubble {
+      background: #1e3a5f;
+      color: #b8d4f5;
+      border-radius: 12px 12px 3px 12px;
+      padding: 8px 14px;
+      font-size: 14px;
+      align-self: flex-end;
+      max-width: 85%;
+    }
+
+    .msg-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding-left: 2px;
+      animation: fadeUp 0.2s ease both;
+    }
+
+    .msg-hint.done {
+      color: #5dcaa5;
+    }
+
+  </style>
+</head>
+<body>
+
+<script src="js/nav.js"></script>
+<script src="js/capas.js" defer></script>
+
+<div class="page-wrapper">
+  <div class="sim-wrapper">
+
+    <div class="sim-header anim-fade-up">
+      <div class="section-label">Módulo 1</div>
+      <h1 style="font-size: clamp(1.5rem, 4vw, 2.2rem); margin-bottom: 0.5rem;">
+        Capas de Abstracción
+      </h1>
+      <p style="font-size: 15px;">
+        Recorre las 5 capas que hacen posible que un computador funcione,
+        desde el hardware físico hasta la app que usas a diario.
+      </p>
+    </div>
+
+    <!-- Dots -->
+    <div class="progress-bar" id="prog-dots"></div>
+
+    <!-- Escena -->
+    <div class="scene-card" id="scene-card">
+      <div class="scene-top">
+        <div class="scene-num"  id="scene-num"></div>
+        <div class="scene-title" id="scene-title"></div>
+        <div class="scene-sub"   id="scene-sub"></div>
+      </div>
+      <div class="scene-body" id="scene-body"></div>
+      <div class="scene-footer">
+        <span class="scene-counter" id="scene-counter"></span>
+        <div class="nav-btns">
+          <button class="btn btn-secondary" id="btn-prev" onclick="capasMove(-1)">← Anterior</button>
+          <button class="btn btn-primary"   id="btn-next" onclick="capasMove(1)">Siguiente →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <p>¿Listo para el siguiente módulo? <a href="whatsapp.html">Ver Simulador de Flujo →</a></p>
+  </footer>
+</div>
+
+</body>
+</html>
